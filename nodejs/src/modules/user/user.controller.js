@@ -4,6 +4,7 @@ const userService = require('./user.service');
 
 // Get all users
 exports.getUsers = async (req, res) => {
+    console.log('getUserr');
     try {
         const users = await userService.findAll();
         res.status(200).json(users);

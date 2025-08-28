@@ -18,9 +18,14 @@ services:
 
   # Node.js 애플리케이션 서비스
   nodejs:
-    build: ./nodejs # 'nodejs' 디렉토리의 Dockerfile을 사용하여 이미지를 빌드합니다.
+    build: 
+      context : ./nodejs # 'nodejs' 디렉토리의 Dockerfile을 사용하여 이미지를 빌드합니다.
+      args:
+        - DATABASE_URL=${DATABASE_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
     container_name: nodejs_sb # 컨테이너 이름을 명확하게 지정합니다.
+    
     environment:
+      # Node.js 애플리케이션에서 사용할 환경 변수를 설정합니다.(런타임)
       # .env 파일에 정의된 환경 변수들을 사용하여 DB 연결 정보를 전달합니다.
       PG_USER: ${PG_USER} 
       PG_HOST: ${PG_HOST} 
@@ -28,7 +33,11 @@ services:
       PG_PASSWORD: ${PG_PASSWORD} 
       PG_PORT: ${PG_PORT} 
     depends_on:
-      - postgresql # PostgreSQL 서비스가 시작된 후에 Node.js가 실행되도록 합니다.
+      postgresql:
+        condition: service_healthy
+      #- postgresql # PostgreSQL 서비스가 시작된 후에 Node.js가 실행되도록 합니다.
+    command: sh -c "npm run db:setup && npm start"
+  
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
@@ -43,10 +52,16 @@ services:
       POSTGRES_USER: ${PG_USER} 
       POSTGRES_PASSWORD: ${PG_PASSWORD} 
       POSTGRES_DB: ${PG_DATABASE} 
-      
+    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
     volumes:
       - postgres-data:/var/lib/postgresql/data # 데이터 영속성을 위해 'postgres-data' 볼륨을 마운트합니다.
-      - ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro # 컨테이너 시작 시 init.sql 스크립트를 실행합니다.
+      #- ./postgresql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro # 컨테이너 시작 시 init.sql 스크립트를 실행합니다.
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
@@ -58,26 +73,3 @@ volumes:
 networks:
   network_sb:
     driver: bridge
-
-
-
-# 실행 
-# docker-compose up -d
-# docker-compose up --build -d
-# 컨테이너 재시작
-# docker-compose restart [서비스명]
-# docker-compose restart
-# 중지 
-# docker-compose down
-# 빌드
-# docker-compose build 
-# pull
-# docker-compose pull
-# 프로세스 확인
-# docker-compose ps
-# 명령어 실행 bash 
-# docker-compose exec [서비스명] [명령어]
-# docker-compose exec web bash
-# 로그 
-# docker-compose logs
-# docker-compose logs -f

@@ -9,6 +9,12 @@ app.use(express.json());
 // 라우터 등록
 app.use('/users', userRouter); // '/users' 경로로 들어오는 요청을 userRouter가 처리
 
+// You can also add a simple root route for testing
+app.get('/', (req, res) => {
+    res.send('Welcome to the Node.js API!');
+});
+
+
 app.listen(3000, () => {
     console.log('Server running on port 3000');
 });
