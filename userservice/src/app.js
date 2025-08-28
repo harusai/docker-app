@@ -1,6 +1,5 @@
 const express = require('express');
 const app = express();
-//const { pool, connectWithRetry } = require('./utils/db');
 const userRouter = require('./modules/user/user.route');
 const port = process.env.ND_PORT || 3000;
 
@@ -12,7 +11,7 @@ app.use('/users', userRouter); // '/users' 경로로 들어오는 요청을 user
 
 // You can also add a simple root route for testing
 app.get('/', (req, res) => {
-    res.send('Welcome to the Node.js API!');
+    res.send('Welcome to the Node.js Userservice API!');
 });
 
 

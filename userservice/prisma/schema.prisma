@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  // The 'output' property is removed to generate the client in the default location,
+  // making it accessible via `@prisma/client`
+  schema          = ["Southbottle"]
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["SBUser"]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(50)
+  email     String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  posts     Post[]
+
+  @@map("users")
+  @@schema("SBUser")
+}
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  author    User     @relation(fields: [userId], references: [id])
+
+  @@map("posts")
+  @@schema("SBUser")
+}
+
+model Product {
+  id    Int      @id @default(autoincrement())
+  name  String   @db.VarChar(100)
+  price Decimal  @db.Decimal(10, 2)
+
+  @@map("products")
+  @@schema("SBUser") // This was added
+}
+
+model Order {
+  id     Int   @id @default(autoincrement())
+  userId Int   @map("user_id")
+  items  Json  @db.JsonB
+  total  Decimal @db.Decimal(10, 2)
+
+  @@map("orders")
+  @@schema("SBUser") // This was added
+}

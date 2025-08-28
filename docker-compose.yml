@@ -3,6 +3,7 @@ version: '3.8'
 
 # 애플리케이션의 각 서비스(컨테이너)를 정의합니다.
 services:
+############################################# NGINX  ####################################################
   # Nginx 서비스: 리버스 프록시 역할을 수행합니다.
   nginx:
     image: nginx:alpine # 가벼운 Alpine 기반의 Nginx 이미지를 사용합니다.
@@ -16,6 +17,19 @@ services:
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
+############################################# view ####################################################
+  # 기존 서비스 아래에 다음 서비스를 추가합니다.
+  #reactjs:
+  #  build:
+  #    context: ./reactjs  # 'reactjs' 디렉터리의 Dockerfile을 사용하여 이미지를 빌드합니다.
+  #  container_name: reactjs_sb  # 컨테이너 이름을 명확하게 지정합니다.
+  #  ports:
+  #    - "3000:3000"  # React 앱의 포트를 노출합니다.
+  #  networks:
+  #    - network_sb  # 사용자 정의 네트워크에 연결합니다.
+
+
+############################################# 기존 nodejs ####################################################
   # Node.js 애플리케이션 서비스
   nodejs:
     build: 
@@ -37,9 +51,54 @@ services:
         condition: service_healthy
       #- postgresql # PostgreSQL 서비스가 시작된 후에 Node.js가 실행되도록 합니다.
     command: sh -c "npm run db:setup && npm start"
-  
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
+
+
+############################################# micro services 추가 ####################################################
+# 새로운 사용자 서비스
+  userservice:
+    build:
+      context: ./userservice # 'userservice' 디렉토리의 Dockerfile을 사용합니다.
+      args:
+        - DATABASE_URL=${DB_USER_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
+    container_name: userservice_sb
+    #environment:
+      # 사용자 서비스에 필요한 환경 변수를 정의합니다.
+      #PG_USER: ${PG_USER}
+      #PG_HOST: ${PG_HOST}
+      #PG_DATABASE: ${PG_DATABASE}
+      #PG_PASSWORD: ${PG_PASSWORD}
+      #PG_PORT: ${PG_PORT}
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    command: sh -c "npm run db:setup && npm start"
+    networks:
+      - network_sb
+
+  # 새로운 주문 서비스
+  orderservice:
+    build:
+      context: ./orderservice # 'orderservice' 디렉토리의 Dockerfile을 사용합니다.
+      args:
+        - DATABASE_URL=${DB_ORDER_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
+    container_name: orderservice_sb
+    #environment:
+      # 주문 서비스에 필요한 환경 변수를 정의합니다.
+      #PG_USER: ${PG_USER}
+      #PG_HOST: ${PG_HOST}
+      #PG_DATABASE: ${PG_DATABASE}
+      #PG_PASSWORD: ${PG_PASSWORD}
+      #PG_PORT: ${PG_PORT}
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    command: sh -c "npm run db:setup && npm start"
+    networks:
+      - network_sb
+
+############################################# PostgreSQL 데이터베이스  ####################################################
 
   # PostgreSQL 데이터베이스 서비스
   postgresql:
