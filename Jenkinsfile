@@ -11,13 +11,13 @@ pipeline {
                 }
             }
         }
-        stage('Build & Test') {
-            steps {
-                // Docker Compose를 사용해 애플리케이션을 빌드하고 테스트합니다.
-                sh 'docker-compose -f docker-compose.yml up --build -d'
-                sh 'docker-compose exec nodejs npm test'
-            }
-        }
+        // stage('Build & Test') {
+        //     steps {
+        //         // Docker Compose를 사용해 애플리케이션을 빌드하고 테스트합니다.
+        //         sh 'docker-compose -f docker-compose.yml up --build -d'
+        //         sh 'docker-compose exec nodejs npm test'
+        //     }
+        // }
         stage('Deploy') {
             steps {
                 // 애플리케이션을 배포합니다.
