@@ -7,7 +7,7 @@ pipeline {
                 // Git 저장소에서 소스 코드를 체크아웃합니다.
                 //git 'https://github.com/harusai/docker-app.git'
                 // 사용자 이름과 비밀번호(여기서는 개인 접근 토큰)를 환경 변수에 할당합니다.
-                withCredentials([usernamePassword(credentialsId: 'docker_jenkins', usernameVariable: 'harusai', passwordVariable: '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')]) {
+                withCredentials([usernamePassword(credentialsId: 'docker_jenkins', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
                     // 환경 변수를 사용하여 Git 클론 명령어를 실행합니다.
                     sh 'git clone https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/harusai/docker-app.git'
                 }
