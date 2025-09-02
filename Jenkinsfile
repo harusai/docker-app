@@ -1,11 +1,6 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker/compose:latest'
-            args '-v /var/run/docker.sock:/var/run/docker.sock' // Docker 소켓을 마운트하여 컨테이너 안에서 docker 명령어 실행, jenkins 서버에 설치 불필요
-        }
-    }
-
+    agent any
+    
     stages {
         stage('Checkout') {
             steps {
@@ -19,6 +14,12 @@ pipeline {
             }
         }
         stage('Build & Test') {
+            agent {
+                docker {
+                    image 'docker/compose:latest'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock' // Docker 소켓을 마운트하여 컨테이너 안에서 docker 명령어 실행, jenkins 서버에 설치 불필요
+                }
+            }
             steps {
                 // Docker Compose를 사용해 애플리케이션을 빌드하고 테스트합니다.
                 // ocker-compose 컨테이너 내부에서 실행
@@ -27,6 +28,12 @@ pipeline {
             }
         }
         stage('Deploy') {
+            agent {
+                docker {
+                    image 'docker/compose:latest'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
             steps {
                 // 애플리케이션을 배포합니다.
                 sh 'docker-compose down' // 기존 컨테이너를 내립니다.
