@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     stages {
-        stage('Checkout') {
+        stage('Checkout & Build & Deploy') {
             agent {
                 docker {
                     image 'docker/compose:latest'
