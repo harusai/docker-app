@@ -1,7 +1,29 @@
 pipeline {
-    agent none
+    agent any
     
     stages {
+        stage('Checkout') {
+            withCredentials([usernamePassword(credentialsId: 'docker_jenkins', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
+                // 환경 변수를 사용하여 Git 클론 명령어를 실행합니다.
+                sh 'git clone https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/harusai/docker-app.git'
+            }
+        }
+        stage('Build & Test') {
+            steps {
+                // Docker Compose를 사용해 애플리케이션을 빌드하고 테스트합니다.
+                // docker-compose 컨테이너 내부에서 실행
+                sh 'docker-compose -f docker-compose.yml up --build -d'
+                sh 'docker-compose exec nodejs npm test'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                // 애플리케이션을 배포합니다.
+                sh 'docker-compose down' // 기존 컨테이너를 내립니다.
+                sh 'docker-compose up --build -d' // 최신 이미지로 다시 배포합니다.
+            }
+        }
+/*
         stage('Checkout & Build & Deploy') {
             agent {
                 docker {
@@ -32,7 +54,7 @@ pipeline {
                 }
 
             }
-        }
+        }*/
         /*stage('Build & Test') {
             steps {
                 // Docker Compose를 사용해 애플리케이션을 빌드하고 테스트합니다.
