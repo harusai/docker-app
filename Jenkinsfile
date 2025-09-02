@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'docker/compose:latest'
+            args '-v /var/run/docker.sock:/var/run/docker.sock' // Docker 소켓을 마운트하여 컨테이너 안에서 docker 명령어 실행, jenkins 서버에 설치 불필요
+        }
+    }
 
     stages {
         stage('Checkout') {
@@ -16,6 +21,7 @@ pipeline {
         stage('Build & Test') {
             steps {
                 // Docker Compose를 사용해 애플리케이션을 빌드하고 테스트합니다.
+                // ocker-compose 컨테이너 내부에서 실행
                 sh 'docker-compose -f docker-compose.yml up --build -d'
                 sh 'docker-compose exec nodejs npm test'
             }
