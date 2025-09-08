@@ -31,7 +31,7 @@ RUN npx prisma generate
 
 
 # PORT
-EXPOSE 3000
+EXPOSE 3002
 
 # 애플리케이션 실행
 CMD ["npm", "start"]

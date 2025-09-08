@@ -1,3 +1,4 @@
+// vite.config.js
 import { defineConfig } from 'vite'
 import federation from '@originjs/vite-plugin-federation'
 import react from '@vitejs/plugin-react'
@@ -9,7 +10,8 @@ export default defineConfig({
     federation({
       name: 'app',
       remotes: {
-        remoteApp: 'http://localhost:5001/assets/remoteEntry.js',
+        // NGINX가 리버스 프록시 역할을 수행하므로, remote-app 경로를 NGINX 설정과 일치시켜야 합니다.
+        remoteApp: 'http://localhost/remote-app/assets/remoteEntry.js',
       },
       shared: ['react','react-dom']
     })

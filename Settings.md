@@ -2,6 +2,7 @@
 # 실행 
  - docker-compose up -d
  - docker-compose up --build -d
+ 
  ### 컨테이너 재시작
  - docker-compose restart [서비스명]
  - docker-compose restart
