@@ -1,3 +1,7 @@
+# sbcom과 sbcef를 모노레포의 패키지로 지정
+# pnpm이 이 두 디렉터리를 하나의 프로젝트처럼 관리
+
 packages:
-  - "host-app"
-  - "remote-app"
+  - "sbcom"
+  - "sbcef"
+  # - "sbasl"

@@ -1,0 +1,777 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// @map DB에서 사용되는 이름과 Prisma모델에서 사용되는 필드 이름을 다르게 설정할때 사용한다. DB상의 컬럼명을 변경!
+// @@map은 DB상의 테이블명을 변경!
+// @map 사용 시 Prisma 모델과 DB 스키마 간의 이름 규칙차이를 극복할 수 있다.
+
+generator client {
+  provider        = "prisma-client-js" // Prisma Client 생성 설정
+  // The 'output' property is removed to generate the client in the default location,
+  // making it accessible via `@prisma/client`
+  schema          = ["Southbottle"]
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"        // 사용할 데이터베이스 종류
+  url      = env("DATABASE_URL") // 데이터베이스 연결 URL (환경 변수 사용)
+  schemas  = ["SBCOM"] // 데이터베이스 스키마
+}
+
+
+
+// 회사 테이블
+model SBCOM_COMPANY {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @unique @db.VarChar(20)         // 회사
+  COMPANY_PARENT_ID Int?                              // 상위 회사
+  COMPANY_NM        String?   @db.VarChar(200)        // 회사 이름
+  COMPANY_DESC      String?   @db.VarChar(500)        // 회사 설명
+  COMPANY_TYPE      String?   @db.VarChar(10)         // 회사 유형
+  COMPANY_REG_NO    String?   @db.VarChar(50)         // 회사 등록 번호
+  USE_YN            String    @db.VarChar(1)  @default("Y")           // 사용 유무
+  VALID_PERIOD_STA_DT String?   @db.VarChar(8)           // 유효 기간 시작일
+  VALID_PERIOD_END_DT String?   @db.VarChar(8)           // 유효 기간 종료일
+  REMARKS           String?   @db.VarChar(500)        // 비고
+  TIMEZONE          String?   @db.VarChar(50)         // 타임존
+
+  // 부모-자식 관계 설정
+  PARENT_COMPANY SBCOM_COMPANY? @relation("CompanyHierarchy", fields: [COMPANY_PARENT_ID], references: [ID])
+  CHILD_COMPANIES SBCOM_COMPANY[] @relation("CompanyHierarchy")
+
+  USER           SBCOM_USER[] // 1:N 관계 설정
+  
+  @@index([COMPANY_ID], name: "IDX_SBCOM_COMPANY_PK")
+  //@@map("SBCOM_USER_ROLE_MAPPING")
+  @@schema("SBCOM")
+}
+
+// 시스템 설정 테이블 
+model SBCOM_SYS_ENV{
+  ID               Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID      String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM           DateTime  @default(now()) 
+  UPD_USER_ID      String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM           DateTime  @default(now())
+  COMPANY_ID       String    @db.VarChar(20)         // 회사
+  ENV_KEY          String     @unique @db.VarChar(100) // 환경 키
+  ENV_VALUE        String?    @db.VarChar(2000)       // 환경 값
+  ENV_DESC         String?    @db.VarChar(500)        // 환경 설명
+  ENV_THEME        String?    @db.VarChar(100)        // 환경 테마
+  USE_YN           String     @db.VarChar(1)  @default("Y")           // 사용 유무
+  REMARKS          String?    @db.VarChar(500)        // 비고
+
+  @@index([COMPANY_ID, ENV_KEY], name: "IDX_SBCOM_SYS_ENV_PK")
+  //@@map("SBCOM_SYS_ENV")
+  @@schema("SBCOM")
+}
+
+
+
+
+
+
+// 사용자 테이블
+model SBCOM_USER {
+  ID                  Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM              DateTime  @default(now()) 
+  UPD_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM              DateTime  @default(now())
+  COMPANY_ID          String    @db.VarChar(20) 
+  USER_ID             String    @unique @db.VarChar(30)  
+  USER_NM             String    @db.VarChar(200) 
+  USE_YN              String    @db.VarChar(1) @default("Y")           // 사용 유무 
+  VALID_PERIOD_STA_DT String?   @db.VarChar(8) 
+  VALID_PERIOD_END_DT String?   @db.VarChar(8) 
+  EMP_NO              String?   @db.VarChar(10)  
+  USER_TY             String    @db.VarChar(2) @default("01") // 사용자 유형 (01: 일반, 02: 관리자) 
+  AP_VENDOR_ID        String?   @db.VarChar(20)  
+  AR_VENDOR_ID        String?   @db.VarChar(20)   
+
+
+  COMPANY_FK          SBCOM_COMPANY @relation(fields: [COMPANY_ID], references: [COMPANY_ID])
+
+  USER_ROLE_MAPPING     SBCOM_USER_ROLE_MAPPING[] // 1:N 관계 설정
+  PASSWORD              SBCOM_PASSWORD[] // 1:N 관계 설정
+  ALARM_USER_GROUP_MAPPING SBCOM_ALARM_USER_GROUP_MAPPING[] // 1:N 관계 설정
+  USER_GROUP_MAPPING SBCOM_USER_GROUP_MAPPING[]
+
+  // sbcom_login_hist            SBCOM_LOGIN_HIST[] // 1:N 관계 설정
+  // sbcom_screen_access_hist    SBCOM_SCREEN_ACCESS_HIST[] // 1:N 관계 설정
+  
+
+  @@unique([COMPANY_ID, USER_ID]) // 복합 유니크 제약 조건(각 회사별 사용자 ID는 유니크)
+  @@index([COMPANY_ID, USER_ID], name: "IDX_SBCOM_USER_PK")
+  //@@map("SBCOM_USER")
+  @@schema("SBCOM")
+}
+
+// 사용자 비밀번호 테이블
+model SBCOM_PASSWORD {
+  ID                  Int     @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM              DateTime  @default(now()) 
+  UPD_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM              DateTime  @default(now())
+  COMPANY_ID          String    @db.VarChar(20)
+  USER_ID             String    @db.VarChar(30)
+  PASSWORD            String    @db.VarChar(48)      // 비밀번호
+  PASSWORD_FAIL_CNT   Int?      @db.Integer           // 비밀번호 실패 횟수
+  PASSWORD_CHANGE_DT  DateTime? @default(now())       // 비밀번호 변경 일자
+  PASSWORD_EXPIRY_DT  DateTime? @default(now())       // 비밀번호 만료 일자
+  LAST_CHANGE_DT      DateTime? @default(now())       // 마지막 변경 일자
+  LAST_LOGIN_DT       DateTime? @default(now())       // 마지막 로그인 일자
+  LAST_LOGOUT_DT      DateTime? @default(now())       // 마지막 로그아웃 일자
+  LOCK_YN             String?   @db.VarChar(1)        // 잠금 여부
+  REMARKS             String?   @db.VarChar(500)      // 비고
+
+ // 복합 고유 키를 참조하도록 관계 수정
+  USER_FK            SBCOM_USER     @relation(fields: [COMPANY_ID, USER_ID], references: [COMPANY_ID, USER_ID])
+
+  @@id([COMPANY_ID, USER_ID]) // SBCOM_PASSWORD 테이블의 복합 ID 설정
+  @@index([COMPANY_ID, USER_ID], name: "IDX_SBCOM_PASSWORD_PK")
+  //@@map("SBCOM_PASSWORD")
+  @@schema("SBCOM")
+}
+
+// 사용자 그룹 테이블 
+model SBCOM_USER_GROUP{
+  ID                Int       @id @default(autoincrement())
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM")
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM")
+  CRT_TM            DateTime  @default(now())
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM")
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM")
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  GROUP_ID          String    @unique @db.VarChar(20) // 그룹 ID
+  GROUP_NM          String    @db.VarChar(200)        // 그룹 이름
+  GROUP_DESC        String?   @db.VarChar(500)        // 그룹 설명
+  USE_YN            String    @db.VarChar(1)  @default("Y")
+  REMARKS           String?   @db.VarChar(500)        // 비고
+
+  // 그룹과 사용자 매핑 관계 설정
+  USER_GROUP_MAPPING SBCOM_USER_GROUP_MAPPING[]
+
+  @@index([COMPANY_ID, GROUP_ID], name: "IDX_SBCOM_USER_GROUP_PK")
+  //@@map("SBCOM_USER_GROUP")
+  @@schema("SBCOM")
+
+}
+
+// 사용자와 그룹 매핑 테이블
+model SBCOM_USER_GROUP_MAPPING{
+  ID                  Int       @id @default(autoincrement())
+  CRT_USER_ID         String    @db.VarChar(100) @default("SYSTEM")
+  CRT_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM")
+  CRT_TM              DateTime  @default(now())
+  UPD_USER_ID         String    @db.VarChar(100) @default("SYSTEM")
+  UPD_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM")
+  UPD_TM              DateTime  @default(now())
+  COMPANY_ID          String    @db.VarChar(20)
+  GROUP_ID            String    @db.VarChar(20)
+  USER_ID             String    @db.VarChar(30)
+  REMARKS             String?   @db.VarChar(500)
+
+  // 관계 설정
+  GROUP_FK            SBCOM_USER_GROUP @relation(fields: [GROUP_ID], references: [GROUP_ID])
+  USER_FK             SBCOM_USER       @relation(fields: [COMPANY_ID, USER_ID], references: [COMPANY_ID, USER_ID])
+
+  @@index([COMPANY_ID, GROUP_ID, USER_ID], name: "IDX_SBCOM_USER_GROUP_MAPPING_PK")
+  //@@map("SBCOM_USER_GROUP_MAPPING")
+  @@schema("SBCOM")
+}
+
+
+
+// 사용자와 역할 매핑 테이블
+model SBCOM_USER_ROLE_MAPPING {
+  ID                  Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM              DateTime  @default(now()) 
+  UPD_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM              DateTime  @default(now())
+  COMPANY_ID          String    @db.VarChar(20)   // 회사
+  USER_ID             String    @db.VarChar(30)   // 사용자 ID
+  ROLE_CD             String    @db.VarChar(30)   // 역할 코드
+  USE_YN              String    @db.VarChar(1)  @default("Y")             // 사용 유무
+  REMARKS             String?   @db.VarChar(500)          // 비고
+  VALID_PERIOD_STA_DT String?   @db.VarChar(8)           // 유효 기간 시작일
+  VALID_PERIOD_END_DT String?   @db.VarChar(8)           // 유효 기간 종료일
+  
+  USER_FK            SBCOM_USER     @relation(fields: [USER_ID], references: [USER_ID]) // 외래 키 설정 n:m
+  ROLE_FK            SBCOM_ROLE     @relation(fields: [ROLE_CD], references: [ROLE_CD]) // 외래 키 설정 n:m
+
+  @@index([COMPANY_ID, USER_ID, ROLE_CD], name: "IDX_SBCOM_USER_ROLE_MAPPING_PK")
+  //@@map("SBCOM_USER_ROLE_MAPPING")
+  @@schema("SBCOM")
+}
+
+// 역할 테이블
+model SBCOM_ROLE {
+  ID                  Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM              DateTime  @default(now()) 
+  UPD_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM              DateTime  @default(now())
+  COMPANY_ID          String    @db.VarChar(20) // 회사
+  ROLE_CD             String    @unique @db.VarChar(30) // 역할 코드
+  ROLE_NM             String?   @db.VarChar(200)        // 역할 이름 
+  ROLE_DESC           String?   @db.VarChar(500)        // 역할 설명 
+  USE_YN              String    @db.VarChar(1) @default("Y")         // 사용 유무
+  REMARKS             String?   @db.VarChar(500) // 비고
+  ATTR1               String?   @db.VarChar(50)
+  ATTR2               String?   @db.VarChar(50)
+  ATTR3               String?   @db.VarChar(50)
+  
+  USER_ROLE_MAPPING     SBCOM_USER_ROLE_MAPPING[] // 1:N 관계 설정
+  ROLE_MENU_MAPPING     SBCOM_ROLE_MENU_MAPPING[]
+
+  @@index([COMPANY_ID, ROLE_CD], name: "IDX_SBCOM_ROLE_PK")
+  //@@map("SBCOM_ROLE")
+  @@schema("SBCOM")
+}
+
+
+// 메뉴 테이블
+model SBCOM_MENU {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM              DateTime  @default(now()) 
+  UPD_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM              DateTime  @default(now())
+  COMPANY_ID          String    @db.VarChar(20) // 회사
+  OWNER_ID            String    @db.VarChar(20)         // 소유자 ID
+  MENU_ID             String    @unique @db.VarChar(20) // 메뉴 ID
+  PARENT_MENU_CD      String?   @db.VarChar(10)         // 상위 메뉴 ID
+  MENU_CD             String    @db.VarChar(10)         // 메뉴 코드
+  MENU_NM             String?   @db.VarChar(200)        // 메뉴 이름
+  DISPLAY_ORDER       Int?      @db.Integer             // 표시 순서
+  USE_YN              String    @db.VarChar(1)  @default("Y")           // 사용 유무
+  REMARKS             String?   @db.VarChar(500)        // 비고 
+  ATTR1               String?   @db.VarChar(50)
+  ATTR2               String?   @db.VarChar(50)
+  ATTR3               String?   @db.VarChar(50)
+  
+
+  MENU_MAPPING     SBCOM_MENU_MAPPING[] // 1:N 관계 설정
+  ROLE_MENU_MAPPING     SBCOM_ROLE_MENU_MAPPING[]
+
+  @@index([COMPANY_ID, OWNER_ID, MENU_CD], name: "IDX_SBCOM_MENU_PK")
+  //@@map("SBCOM_MENU")
+  @@schema("SBCOM")
+}
+
+// 메뉴 매핑 테이블
+model SBCOM_MENU_MAPPING {
+  CRT_USER_ID       String     @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String     @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime   @default(now()) 
+  UPD_USER_ID       String     @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String     @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime   @default(now())
+  COMPANY_ID        String     @db.VarChar(20) // 회사
+  MAPPING_ID        String     @unique @db.VarChar(20)         // 소유자 ID
+  MENU_ID           String     @db.VarChar(20) // 메뉴 ID
+  SEARCH_YN         String?    @db.VarChar(1)          // 조회 권한
+  CREATE_YN         String?    @db.VarChar(1)          // 생성 권한
+  UPDATE_YN         String?    @db.VarChar(1)          // 수정 권한
+  DELETE_YN         String?    @db.VarChar(1)          // 삭제 권한
+  CONFIRM_YN        String?    @db.VarChar(1)          // 승인 권한
+  PRINT_YN          String?    @db.VarChar(1)          // 출력 권한
+  EXPORT_YN         String?    @db.VarChar(1)          // 내보내기 권한
+  IMPORT_YN         String?    @db.VarChar(1)          // 가져오기 권한
+  CUSTOM1_YN        String?    @db.VarChar(1)          // 사용자 정의 1 권한
+  CUSTOM2_YN        String?    @db.VarChar(1)          // 사용자 정의 2 권한
+  CUSTOM3_YN        String?    @db.VarChar(1)          // 사용자 정의 3 권한       
+  CUSTOM4_YN        String?    @db.VarChar(1)          // 사용자 정의 4 권한       
+  CUSTOM5_YN        String?    @db.VarChar(1)          // 사용자 정의 5 권한       
+  CUSTOM6_YN        String?    @db.VarChar(1)          // 사용자 정의 6 권한       
+  CUSTOM7_YN        String?    @db.VarChar(1)          // 사용자 정의 7 권한       
+  CUSTOM8_YN        String?    @db.VarChar(1)          // 사용자 정의 8 권한       
+  CUSTOM9_YN        String?    @db.VarChar(1)          // 사용자 정의 9 권한       
+  CUSTOM10_YN       String?    @db.VarChar(1)          // 사용자 정의 10 권한       
+
+  MENU_FK           SBCOM_MENU     @relation(fields: [MENU_ID], references: [MENU_ID]) // 외래 키 설정 n:m
+  
+  @@index([COMPANY_ID, MAPPING_ID, MENU_ID], name: "IDX_SBCOM_MENU_MAPPING_PK")
+  //@@map("SBCOM_MENU_MAPPING")
+  @@schema("SBCOM")
+}
+
+// 메뉴 매핑 테이블 확장
+model SBCOM_MENU_MAPPING_EXT {
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  MAPPING_ID        String    @unique @db.VarChar(20) // 소유자 ID
+  MENU_ID           String    @db.VarChar(20)         // 메뉴 ID   
+
+  @@index([COMPANY_ID, MAPPING_ID, MENU_ID], name: "IDX_SBCOM_MENU_MAPPING_EXT_PK")
+  //@@map("SBCOM_MENU_MAPPING_EXT")
+  @@schema("SBCOM")
+}
+
+// 역할과 메뉴 매핑 테이블
+model SBCOM_ROLE_MENU_MAPPING{
+  ID                Int       @id @default(autoincrement())
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM")
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM")
+  CRT_TM            DateTime  @default(now())
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM")
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM")
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  ROLE_CD           String    @db.VarChar(30)         // 역할 코드
+  MENU_ID           String    @db.VarChar(20)         // 메뉴 ID
+  
+  // 권한 관련 필드 추가
+  SEARCH_YN         String?   @db.VarChar(1) // 조회 권한
+  CREATE_YN         String?   @db.VarChar(1) // 생성 권한
+  UPDATE_YN         String?   @db.VarChar(1) // 수정 권한
+  DELETE_YN         String?   @db.VarChar(1) // 삭제 권한
+  CONFIRM_YN        String?   @db.VarChar(1) // 승인 권한
+  PRINT_YN          String?   @db.VarChar(1) // 출력 권한
+  EXPORT_YN         String?   @db.VarChar(1) // 내보내기 권한
+  IMPORT_YN         String?   @db.VarChar(1) // 가져오기 권한
+
+  // 관계 설정
+  ROLE_FK           SBCOM_ROLE @relation(fields: [ROLE_CD], references: [ROLE_CD])
+  MENU_FK           SBCOM_MENU @relation(fields: [MENU_ID], references: [MENU_ID])
+
+  @@index([COMPANY_ID, ROLE_CD, MENU_ID], name: "IDX_SBCOM_ROLE_MENU_MAPPING_PK")
+  @@schema("SBCOM")
+}
+
+
+// 화면
+model SBCOM_SCREEN {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String     @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String     @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime   @default(now()) 
+  UPD_USER_ID       String     @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String     @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime   @default(now())
+  SCREEN_ID         String     @unique @db.VarChar(20) // 화면 ID
+  SCREEN_NM         String?    @db.VarChar(200)        // 화면 이름
+  COMPANY_ID        String     @db.VarChar(20)         // 회사
+  CHAIN_CD          String?    @db.VarChar(10)         // 체인 코드
+  SCREEN_CATEGORY   String?    @db.VarChar(3)          // 화면 분류
+  SEARCH_YN         String?    @db.VarChar(1)          // 조회 권한
+  CREATE_YN         String?    @db.VarChar(1)          // 생성 권한
+  UPDATE_YN         String?    @db.VarChar(1)          // 수정 권한
+  DELETE_YN         String?    @db.VarChar(1)          // 삭제 권한
+  CONFIRM_YN        String?    @db.VarChar(1)          // 승인 권한
+  PRINT_YN          String?    @db.VarChar(1)          // 출력 권한
+  EXPORT_YN         String?    @db.VarChar(1)          // 내보내기 권한
+  IMPORT_YN         String?    @db.VarChar(1)          // 가져오기 권한
+  CUSTOM1_YN        String?    @db.VarChar(1)          // 사용자 정의 1 권한
+  CUSTOM2_YN        String?    @db.VarChar(1)          // 사용자 정의 2 권한
+  CUSTOM3_YN        String?    @db.VarChar(1)          // 사용자 정의 3 권한       
+  CUSTOM4_YN        String?    @db.VarChar(1)          // 사용자 정의 4 권한       
+  CUSTOM5_YN        String?    @db.VarChar(1)          // 사용자 정의 5 권한       
+  CUSTOM6_YN        String?    @db.VarChar(1)          // 사용자 정의 6 권한       
+  CUSTOM7_YN        String?    @db.VarChar(1)          // 사용자 정의 7 권한       
+  CUSTOM8_YN        String?    @db.VarChar(1)          // 사용자 정의 8 권한       
+  CUSTOM9_YN        String?    @db.VarChar(1)          // 사용자 정의 9 권한       
+  CUSTOM10_YN       String?    @db.VarChar(1)          // 사용자 정의 10 권한     
+
+
+  @@index([SCREEN_ID], name: "IDX_SBCOM_SCREEN_PK")
+  //@@map("SBCOM_SCREEN")
+  @@schema("SBCOM")
+}
+
+
+// 외부 화면 연결
+model SBCOM_SCREEN_EXT_URL {
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  SCREEN_ID        String     @unique @db.VarChar(20) // 화면 ID
+  EXT_URL          String?    @db.VarChar(2000)       // 외부 URL
+  REMARKS          String?    @db.VarChar(500)        // 비고 
+
+  @@index([COMPANY_ID, SCREEN_ID], name: "IDX_SBCOM_SCREEN_EXT_URL_PK")
+  //@@map("SBCOM_SCREEN_EXT_URL")
+  @@schema("SBCOM")
+}
+
+// 코드 마스터 테이블 
+model SBCOM_CODE_MASTER {
+  CRT_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM              DateTime  @default(now()) 
+  UPD_USER_ID         String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM              DateTime  @default(now())
+  COMPANY_ID          String    @db.VarChar(20)         // 회사
+  CHAIN_CD            String?   @db.VarChar(10)         // 체인 코드
+  MASTER_CD           String    @unique @db.VarChar(40) // 마스터 코드
+  MASTER_NM           String?   @db.VarChar(200)        // 마스터 
+  MASTER_DESC         String?   @db.VarChar(500)        // 마스터 설명
+  USE_YN              String    @db.VarChar(1)  @default("Y")   // 사용 유무
+  REMARKS             String?   @db.VarChar(500)                // 비고
+  MULTI_LANG_YN       String    @db.VarChar(1) @default("Y")    // 다국어 사용 여부
+  CHAIN_DEPENDENT_YN  String    @db.VarChar(1) @default("N")    // 체인 의존 여부
+  ATTR1               String?   @db.VarChar(200)  
+  ATTR2               String?   @db.VarChar(200)  
+  ATTR3               String?   @db.VarChar(200)
+  ATTR4               String?   @db.VarChar(200)
+  ATTR5               String?   @db.VarChar(200)
+  ATTR6               String?   @db.VarChar(200)
+  ATTR7               String?   @db.VarChar(200)
+  ATTR8               String?   @db.VarChar(200)
+  ATTR9               String?   @db.VarChar(200)
+  ATTR10              String?   @db.VarChar(200)
+
+  @@index([COMPANY_ID, MASTER_CD], name: "IDX_SBCOM_CODE_MASTER_PK")
+  //@@map("SBCOM_CODE_MASTER")
+  @@schema("SBCOM")
+}
+
+
+// 코드 마스터 테이블 
+model SBCOM_CODE_DETAIL {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  MASTER_CD         String    @db.VarChar(40)         // 마스터 코드
+  CD_VALUE          String    @db.VarChar(50)         // 코드 값
+  CD_NM             String?   @db.VarChar(200)        // 코드 이름
+  CD_DESC           String?   @db.VarChar(500)        // 코드 설명
+  DISPLAY_ORDER     Int?      @db.Integer             // 표시 순서
+  DEFAULT_YN        String?   @db.VarChar(1)          // 기본 값
+  USE_YN            String    @db.VarChar(1)  @default("Y")           // 사용 유무
+  REMARKS           String?   @db.VarChar(500)        // 비고
+  ATTR1             String?   @db.VarChar(200)  
+  ATTR2             String?   @db.VarChar(200)  
+  ATTR3             String?   @db.VarChar(200)
+  ATTR4             String?   @db.VarChar(200)
+  ATTR5             String?   @db.VarChar(200)
+  ATTR6             String?   @db.VarChar(200)
+  ATTR7             String?   @db.VarChar(200)
+  ATTR8             String?   @db.VarChar(200)
+  ATTR9             String?   @db.VarChar(200)
+  ATTR10            String?   @db.VarChar(200)
+
+  @@index([COMPANY_ID, MASTER_CD, CD_VALUE], name: "IDX_SBCOM_CODE_DETAIL_PK")
+  //@@map("SBCOM_CODE_DETAIL")
+  @@schema("SBCOM")
+}
+
+// 로그인 이력 테이블 
+model SBCOM_LOGIN_HIST {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  USER_ID           String    @db.VarChar(30)         // 사용자 ID
+  LOGIN_TM          DateTime  @default(now())         // 로그인 시간
+  LOGOUT_TM         DateTime?                      // 로그아웃 시간
+  LOGIN_IP          String?   @db.VarChar(45)         // 로그인 IP
+  USER_AGENT       String?   @db.VarChar(255)        // 사용자 에이전트
+  SESSION_ID       String?   @db.VarChar(100)        // 세션 ID
+  REMARKS          String?   @db.VarChar(500)        // 비고
+
+  @@index([COMPANY_ID, USER_ID, LOGIN_TM], name: "IDX_SBCOM_LOGIN_HIST_PK")
+  //@@map("SBCOM_LOGIN_HIST")
+  @@schema("SBCOM")
+}
+
+// 화면 접근 이력 테이블 
+model SBCOM_SCREEN_ACCESS_HIST {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  USER_ID           String    @db.VarChar(30)         // 사용자 ID
+  ACCESS_TM         DateTime  @default(now())         // 접근 시간
+  SCREEN_ID        String     @db.VarChar(20)        // 화면 ID
+  ACCESS_IP        String?    @db.VarChar(45)         // 접근 IP
+  USER_AGENT      String?    @db.VarChar(255)        // 사용자 에이전트
+  SESSION_ID      String?    @db.VarChar(100)        // 세션 ID
+  REMARKS         String?    @db.VarChar(500)        // 비고
+
+  @@index([COMPANY_ID, USER_ID, ACCESS_TM], name: "IDX_SBCOM_SCREEN_ACCESS_HIST_PK")
+  //@@map("SBCOM_SCREEN_ACCESS_HIST")
+  @@schema("SBCOM")
+}
+
+// 감사 로그 테이블 - 사용자가 어떤 테이블에 어떤 레코드를 언제, 어떻게 (생성,수정,삭제) 변경 기록 
+model SBCOM_AUDIT_LOG{
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  USER_ID           String    @db.VarChar(30)         // 사용자 ID
+  ACTION_TM         DateTime  @default(now())         // 작업 시간
+  ACTION_TYPE      String     @db.VarChar(20)        // 작업 유형 (CREATE, UPDATE, DELETE 등)
+  ENTITY_NAME      String     @db.VarChar(100)       // 엔티티 이름 (테이블 이름)
+  ENTITY_ID        String?    @db.VarChar(50)        // 엔티티 ID (레코드 식별자)
+  CHANGE_DETAILS   String?    @db.Text               // 변경 내용 (JSON 형식 등)
+  REMARKS          String?    @db.VarChar(500)       // 비고
+
+  @@index([COMPANY_ID, USER_ID, ACTION_TM], name: "IDX_SBCOM_AUDIT_LOG_PK")
+  //@@map("SBCOM_AUDIT_LOG")
+  @@schema("SBCOM")
+}
+
+// 데이터 변경 이력 테이블
+model SBCOM_DATA_CHANGE_LOG {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM")
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM")
+  CRT_TM            DateTime  @default(now())
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM")
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM")
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)          // 회사 ID
+  USER_ID           String    @db.VarChar(30)          // 변경을 수행한 사용자 ID
+  ACTION_TM         DateTime  @default(now())          // 변경 작업 시간
+  ENTITY_NAME       String    @db.VarChar(100)         // 변경된 테이블 이름 (예: 'SBCOM_USER')
+  ENTITY_ID         String    @db.VarChar(50)          // 변경된 레코드의 ID (예: 'john.doe')
+  FIELD_NAME        String    @db.VarChar(100)         // 변경된 필드 이름 (예: 'USER_NM')
+  OLD_VALUE         String?   @db.VarChar(2000)        // 변경 전 값
+  NEW_VALUE         String?   @db.VarChar(2000)        // 변경 후 값
+  REMARKS           String?   @db.VarChar(500)         // 비고
+
+  @@index([COMPANY_ID, USER_ID, ENTITY_NAME, ACTION_TM])
+  @@schema("SBCOM")
+}
+
+// 공지사항 테이블 
+model SBCOM_NOTICE {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  NOTICE_ID        String     @unique @db.VarChar(20) // 공지사항 ID
+  NOTICE_TITLE     String     @db.VarChar(200)        // 공지사항 제목
+  NOTICE_CONTENT   String?    @db.Text                // 공지사항 내용
+  NOTICE_TYPE      String?    @db.VarChar(10)         // 공지사항 유형
+  START_DT         String?    @db.VarChar(8)          // 시작일
+  END_DT           String?    @db.VarChar(8)          // 종료일
+  IMPORTANT_YN     String?    @db.VarChar(1)          // 중요 여부
+  USE_YN           String     @db.VarChar(1)  @default("Y")           // 사용 유무
+  REMARKS          String?    @db.VarChar(500)        // 비고
+
+  @@index([COMPANY_ID, NOTICE_ID], name: "IDX_SBCOM_NOTICE_PK")
+  //@@map("SBCOM_NOTICE")
+  @@schema("SBCOM")
+}
+
+
+// 배치 & 스케줄링 알람 테이블
+model SBCOM_ALARM{
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  ALARM_GROUP_ID    String?   @db.VarChar(20) // 알람 그룹 ID
+  ALARM_ID         String     @unique @db.VarChar(20) // 알람 ID
+  ALARM_TITLE      String     @db.VarChar(200)        // 알람 제목
+  ALARM_CONTENT    String?    @db.Text                // 알람 내용
+  ALARM_TYPE       String?    @db.VarChar(10)         // 알람 유형
+  ALARM_STATUS     String?    @db.VarChar(10)         // 알람 상태
+  SEND_YN          String?    @db.VarChar(1)          // 발송 여부
+  SEND_TM          DateTime?                      // 발송 시간
+  RECEIVE_USER_ID  String?    @db.VarChar(30)         // 수신자 ID
+  RECEIVE_EMAIL    String?    @db.VarChar(100)        // 수신자 이메일
+  RECEIVE_PHONE    String?    @db.VarChar(15)         // 수신자 전화번호
+  USE_YN           String     @db.VarChar(1)  @default("Y")           // 사용 유무
+  REMARKS          String?    @db.VarChar(500)        // 비고
+
+  // 알람과 그룹 매핑의 관계
+  ALARM_GORUP_FK SBCOM_ALARM_USER_GROUP? @relation(fields: [ALARM_GROUP_ID], references: [GROUP_ID])
+
+  @@index([COMPANY_ID, ALARM_ID], name: "IDX_SBCOM_ALARM_PK")
+  //@@map("SBCOM_ALARM")
+  @@schema("SBCOM")
+}
+
+// 알람 사용자 그룹
+model SBCOM_ALARM_USER_GROUP {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  GROUP_ID         String     @unique @db.VarChar(20) // 그룹 ID
+  GROUP_NM         String     @db.VarChar(200)        // 그룹 이름
+  GROUP_DESC       String?    @db.VarChar(500)        // 그룹 설명
+  USE_YN           String     @db.VarChar(1)  @default("Y")           // 사용 유무
+  REMARKS          String?    @db.VarChar(500)        // 비고
+
+
+    // 그룹과 알람 간의 관계
+  ALARM SBCOM_ALARM[]
+  // 그룹과 사용자 매핑의 관계
+  ALARM_USER_GROUP_MAPPING SBCOM_ALARM_USER_GROUP_MAPPING[]
+
+  @@index([COMPANY_ID, GROUP_ID], name: "IDX_SBCOM_ALARM_USER_GROUP_PK")
+  //@@map("SBCOM_ALARM_USER_GROUP")
+  @@schema("SBCOM")
+}
+
+// 알람 사용자 그룹 매핑
+model SBCOM_ALARM_USER_GROUP_MAPPING {  
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now()) 
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)         // 회사
+  GROUP_ID         String     @db.VarChar(20)         // 그룹 ID
+  USER_ID          String     @db.VarChar(30)         // 사용자 ID
+  USE_YN           String     @db.VarChar(1)  @default("Y")           // 사용 유무
+  REMARKS          String?    @db.VarChar(500)        // 비고
+
+  // 그룹과 사용자 간의 다대다(N:M) 관계 설정
+  ALARM_USER_GROUP_FK SBCOM_ALARM_USER_GROUP @relation(fields: [GROUP_ID], references: [GROUP_ID])
+  USER_FK SBCOM_USER @relation(fields: [USER_ID], references: [USER_ID])
+
+  @@index([COMPANY_ID, GROUP_ID, USER_ID], name: "IDX_SBCOM_ALARM_USER_GROUP_MAPPING_PK")
+  //@@map("SBCOM_ALARM_USER_GROUP_MAPPING")
+  @@schema("SBCOM")
+}
+
+
+// 다국어 지원 테이블
+model SBCOM_MULTI_LANG {
+  ID           Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID  String    @db.VarChar(100) @default("SYSTEM")
+  CRT_OBJ_ID   String    @db.VarChar(100) @default("SYSTEM")
+  CRT_TM       DateTime  @default(now())
+  UPD_USER_ID  String    @db.VarChar(100) @default("SYSTEM")
+  UPD_OBJ_ID   String    @db.VarChar(100) @default("SYSTEM")
+  UPD_TM       DateTime  @default(now())
+
+  TABLE_NAME   String    @db.VarChar(50)  // 원본 테이블 이름 (예: 'SBCOM_MENU')
+  COLUMN_NAME  String    @db.VarChar(50)  // 원본 컬럼 이름 (예: 'MENU_NM')
+  RECORD_ID    String    @db.VarChar(50)  // 원본 테이블의 레코드 ID (예: 'MNU-001')
+  LANG_CD      String    @db.VarChar(10)  // 언어 코드 (예: 'ko', 'en', 'ja')
+  TEXT_VALUE   String    @db.VarChar(2000) // 번역된 텍스트
+
+  //@@id([TABLE_NAME, COLUMN_NAME, RECORD_ID, LANG_CD]) // 복합 키
+  @@schema("SBCOM")
+}
+
+
+// 체인 설정 테이블
+model SBCOM_CHAIN_CONFIG {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  CRT_TM            DateTime  @default(now())
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM") // 생성자
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM") // 생성 오브젝트
+  UPD_TM            DateTime  @default(now())
+  COMPANY_ID        String    @db.VarChar(20)          // 회사 ID
+  CHAIN_CD          String    @db.VarChar(10)          // 체인 코드
+  CONFIG_KEY        String    @db.VarChar(100)         // 설정 키 (예: 'LOGO_URL', 'API_KEY')
+  CONFIG_VALUE      String?   @db.VarChar(2000)        // 설정 값
+  REMARKS           String?   @db.VarChar(500)         // 비고
+  USE_YN            String    @db.VarChar(1) @default("Y") // 사용 유무
+
+  @@unique([CHAIN_CD, CONFIG_KEY]) // 체인 내에서 설정 키는 고유해야 함
+  @@index([COMPANY_ID, CHAIN_CD], name: "IDX_SBCOM_CHAIN_CONFIG_PK")
+  @@schema("SBCOM")
+}
+
+
+// 통화 정보 테이블
+model SBCOM_CURRENCY {
+  ID                  Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID         String    @db.VarChar(100) @default("SYSTEM")
+  CRT_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM")
+  CRT_TM              DateTime  @default(now())
+  UPD_USER_ID         String    @db.VarChar(100) @default("SYSTEM")
+  UPD_OBJ_ID          String    @db.VarChar(100) @default("SYSTEM")
+  UPD_TM              DateTime  @default(now())
+  CURRENCY_CD         String    @unique @db.VarChar(10)  // 통화 코드 (예: 'USD', 'KRW')
+  CURRENCY_NM         String    @db.VarChar(100)         // 통화 이름 (예: 'US Dollar', 'South Korean Won')
+  CURRENCY_SYMBOL     String?   @db.VarChar(10)          // 통화 기호 (예: '$', '₩')
+  REMARKS             String?   @db.VarChar(500)         // 비고
+
+  @@schema("SBCOM")
+}
+
+// 환율 정보 테이블
+model SBCOM_EXCHANGE_RATE {
+  ID                Int       @id @default(autoincrement()) // 기본 키, 자동 증가
+  CRT_USER_ID       String    @db.VarChar(100) @default("SYSTEM")
+  CRT_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM")
+  CRT_TM            DateTime  @default(now())
+  UPD_USER_ID       String    @db.VarChar(100) @default("SYSTEM")
+  UPD_OBJ_ID        String    @db.VarChar(100) @default("SYSTEM")
+  UPD_TM            DateTime  @default(now())
+  FROM_CURRENCY_CD  String    @db.VarChar(10)          // 출발 통화 코드
+  TO_CURRENCY_CD    String    @db.VarChar(10)          // 대상 통화 코드
+  RATE_DATE         DateTime                           // 환율 기준 날짜
+  EXCHANGE_RATE     Float                              // 환율
+  REMARKS           String?   @db.VarChar(500)         // 비고
+
+  @@index([FROM_CURRENCY_CD, TO_CURRENCY_CD, RATE_DATE], name: "IDX_SBCOM_EXCHANGE_RATE_PK")
+  @@schema("SBCOM")
+}
+

@@ -1,3 +1,7 @@
+
+-- init.sql 사용안함. 
+-- 각 서비스에서 직접 테이블 생성 및 초기화 수행
+
 -- 스키마 생성 
 -- docker-compose.yml의 PG_DATABASE 값인 "Southbottle"을 직접 사용합니다.
 CREATE SCHEMA IF NOT EXISTS Southbottle;

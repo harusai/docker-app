@@ -13,71 +13,74 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # Nginx 설정 파일을 읽기 전용으로 마운트합니다.
     depends_on:
-      - nodejs # Node.js 서비스가 시작된 후에 Nginx가 실행되도록 합니다.
-      - userservice # userservice 추가
-      - orderservice # orderservice 추가
-      - host-app # host-app 추가
-      - remote-app # remote-app 추가
+      - mbe-sbcom # backend nodejs 공통 서비스가 시작된 후에 Nginx가 실행되도록 합니다.
+      - mbe-sbcef # backend nodejs sbcefserv
+      - mbe-sbasl # backend nodejs sbaslserv
+      - mfe-sbcom # sbcom host front framework 뼈대가 될 서비스
+      - mfe-sbcef  # sbcom 뼈대 서비스에 로드될 sbcef 서비스 
+      # - sbasl  # sbcom 뼈대 서비스에 로드될 sbasl 서비스 
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
-############################################# view ####################################################
+############################################# micro front service ####################################################
   # 기존 서비스 아래에 다음 서비스를 추가합니다.
-  host-app:
+  mfe-sbcom:
     build:
       context: ./frontend
-      dockerfile: host-app/Dockerfile
-    container_name: mfe-host
+      dockerfile: sbcom/Dockerfile # pnpm workspace의 sbcom 디렉터리에 있는 Dockerfile을 사용합니다.
+    container_name: mfe-sbcom
     ports:
       - "5000:80"
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
-  remote-app:
+  mfe-sbcef:
     build:
-      context: ./frontend
-      dockerfile: remote-app/Dockerfile
-    container_name: mfe-remote
+      context: ./frontend 
+      dockerfile: sbcef/Dockerfile
+    container_name: mfe-sbcef
     ports:
-      - "5001:80"
+      - "5100:80"
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
 
 
-############################################# 기존 nodejs ####################################################
+############################################# micro services ####################################################
   # Node.js 애플리케이션 서비스
-  nodejs:
+  mbe-sbcom:
     build: 
-      context : ./backend/nodejs # 'nodejs' 디렉토리의 Dockerfile을 사용하여 이미지를 빌드합니다.
+      context: ./backend/sbcom
+      dockerfile: Dockerfile
       args:
         - DATABASE_URL=${DATABASE_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
-    container_name: nodejs_sb # 컨테이너 이름을 명확하게 지정합니다.
-    environment:
+    container_name: mbe-sbcom # 컨테이너 이름을 명확하게 지정합니다.
+    #environment:
       # Node.js 애플리케이션에서 사용할 환경 변수를 설정합니다.(런타임)
       # .env 파일에 정의된 환경 변수들을 사용하여 DB 연결 정보를 전달합니다.
-      PG_USER: ${PG_USER} 
-      PG_HOST: ${PG_HOST} 
-      PG_DATABASE: ${PG_DATABASE} 
-      PG_PASSWORD: ${PG_PASSWORD} 
-      PG_PORT: ${PG_PORT} 
+      # PG_USER: ${PG_USER} 
+      # PG_HOST: ${PG_HOST} 
+      # PG_DATABASE: ${PG_DATABASE} 
+      # PG_PASSWORD: ${PG_PASSWORD} 
+      # PG_PORT: ${PG_PORT} 
     depends_on:
       postgresql:
         condition: service_healthy
       #- postgresql # PostgreSQL 서비스가 시작된 후에 Node.js가 실행되도록 합니다.
-    command: sh -c "npm run db:setup && npm start"
+   # command: sh -c "npm run db:setup && npm start"
+     #command: sh -c "psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBUser; CREATE SCHEMA IF NOT EXISTS SBOrder; CREATE SCHEMA IF NOT EXISTS Southbottle;' && npm run db:setup && npm start"
+    command: npm start
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
-
-############################################# micro services 추가 ####################################################
-# 새로운 사용자 서비스
-  userservice:
+# SB_CEF
+  mbe-sbcef:
     build:
-      context: ./backend/userservice # 'userservice' 디렉토리의 Dockerfile을 사용합니다.
+      context: ./backend/sbcef
+      dockerfile: Dockerfile
       args:
         - DATABASE_URL=${DB_USER_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
-    container_name: userservice_sb
+    container_name: mbe-sbcef
     #environment:
       # 사용자 서비스에 필요한 환경 변수를 정의합니다.
       #PG_USER: ${PG_USER}
@@ -88,17 +91,19 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-    command: sh -c "npm run db:setup && npm start"
+    #command: sh -c "npm run db:setup && npm start"
+    command: npm start
     networks:
       - network_sb
 
-  # 새로운 주문 서비스
-  orderservice:
+  # SB_ASL
+  mbe-sbasl:
     build:
-      context: ./backend/orderservice # 'orderservice' 디렉토리의 Dockerfile을 사용합니다.
+      context: ./backend/sbasl
+      dockerfile: Dockerfile
       args:
         - DATABASE_URL=${DB_ORDER_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
-    container_name: orderservice_sb
+    container_name: mbe-sbasl
     #environment:
       # 주문 서비스에 필요한 환경 변수를 정의합니다.
       #PG_USER: ${PG_USER}
@@ -109,11 +114,39 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-    command: sh -c "npm run db:setup && npm start"
+    # command: sh -c "npm run db:setup && npm start"
+    command: npm start
     networks:
       - network_sb
 
 ############################################# PostgreSQL 데이터베이스  ####################################################
+
+  # 데이터베이스 초기화 서비스
+  db-init:
+    image: node:22-alpine # Prisma와 psql을 실행하기 위해 Node.js 이미지를 사용
+    container_name: db_init_sb
+    volumes:
+      - ./backend/sbcom:/app/backend/sbcom
+      - ./backend/sbcef:/app/backend/sbcef
+      - ./backend/sbasl:/app/backend/sbasl
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    command: >
+      sh -c "
+      apk add --no-cache postgresql-client &&
+      psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBUser; CREATE SCHEMA IF NOT EXISTS SBOrder; CREATE SCHEMA IF NOT EXISTS Southbottle;' &&
+      cd /app/backend/sbcom && npm run db:setup &&
+      cd /app/backend/sbcef && npm run db:setup &&
+      cd /app/backend/sbasl && npm run db:setup &&
+      echo 'Database initialization complete.'
+      "
+    networks:
+      - network_sb
 
   # PostgreSQL 데이터베이스 서비스
   postgresql:
