@@ -1,7 +1,7 @@
 {
-  "name": "mfe-sbcef",
+  "name": "mbe-sbcef",
   "version": "1.0.0",
-  "description": "my app",
+  "description": "CEF 서비스",
   "main": "app.js",
   "scripts": {
     "start": "node src/app.js",

@@ -8,7 +8,7 @@ RUN apk add --no-cache openssl
 WORKDIR /app
 
 # 애플리케이션 종속성 설치
-COPY package*.json .
+COPY package*.json ./
 RUN npm install
 
 # Prisma 디렉토리와 소스 코드 전체를 작업 디렉토리로 복사

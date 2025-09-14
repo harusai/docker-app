@@ -1,7 +1,7 @@
 {
-  "name": "mfe-sbasl",
+  "name": "mbe-sbasl",
   "version": "1.0.0",
-  "description": "my app",
+  "description": "ASL 서비스",
   "main": "app.js",
   "scripts": {
     "start": "node src/app.js",

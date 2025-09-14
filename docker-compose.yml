@@ -55,21 +55,21 @@ services:
       args:
         - DATABASE_URL=${DATABASE_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
     container_name: mbe-sbcom # 컨테이너 이름을 명확하게 지정합니다.
-    #environment:
+    environment:
       # Node.js 애플리케이션에서 사용할 환경 변수를 설정합니다.(런타임)
       # .env 파일에 정의된 환경 변수들을 사용하여 DB 연결 정보를 전달합니다.
-      # PG_USER: ${PG_USER} 
-      # PG_HOST: ${PG_HOST} 
-      # PG_DATABASE: ${PG_DATABASE} 
-      # PG_PASSWORD: ${PG_PASSWORD} 
-      # PG_PORT: ${PG_PORT} 
+      PG_USER: ${PG_USER} 
+      PG_HOST: ${PG_HOST} 
+      PG_DATABASE: ${PG_DATABASE} 
+      PG_PASSWORD: ${PG_PASSWORD} 
+      PG_PORT: ${PG_PORT} 
     depends_on:
       postgresql:
         condition: service_healthy
       #- postgresql # PostgreSQL 서비스가 시작된 후에 Node.js가 실행되도록 합니다.
-   # command: sh -c "npm run db:setup && npm start"
+    command: sh -c "npm run db:setup && npm start"
      #command: sh -c "psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBUser; CREATE SCHEMA IF NOT EXISTS SBOrder; CREATE SCHEMA IF NOT EXISTS Southbottle;' && npm run db:setup && npm start"
-    command: npm start
+    # command: npm start
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
@@ -79,20 +79,20 @@ services:
       context: ./backend/sbcef
       dockerfile: Dockerfile
       args:
-        - DATABASE_URL=${DB_USER_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
+        - DATABASE_URL=${DB_CEF_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
     container_name: mbe-sbcef
-    #environment:
+    environment:
       # 사용자 서비스에 필요한 환경 변수를 정의합니다.
-      #PG_USER: ${PG_USER}
-      #PG_HOST: ${PG_HOST}
-      #PG_DATABASE: ${PG_DATABASE}
-      #PG_PASSWORD: ${PG_PASSWORD}
-      #PG_PORT: ${PG_PORT}
+      PG_USER: ${PG_USER}
+      PG_HOST: ${PG_HOST}
+      PG_DATABASE: ${PG_DATABASE}
+      PG_PASSWORD: ${PG_PASSWORD}
+      PG_PORT: ${PG_PORT}
     depends_on:
       postgresql:
         condition: service_healthy
-    #command: sh -c "npm run db:setup && npm start"
-    command: npm start
+    command: sh -c "npm run db:setup && npm start"
+    # command: npm start
     networks:
       - network_sb
 
@@ -102,51 +102,51 @@ services:
       context: ./backend/sbasl
       dockerfile: Dockerfile
       args:
-        - DATABASE_URL=${DB_ORDER_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
+        - DATABASE_URL=${DB_ASL_URL}      # 빌드 시점에 사용할 환경 변수(빌드타임) PRISMA에서 사용 
     container_name: mbe-sbasl
-    #environment:
+    environment:
       # 주문 서비스에 필요한 환경 변수를 정의합니다.
-      #PG_USER: ${PG_USER}
-      #PG_HOST: ${PG_HOST}
-      #PG_DATABASE: ${PG_DATABASE}
-      #PG_PASSWORD: ${PG_PASSWORD}
-      #PG_PORT: ${PG_PORT}
+      PG_USER: ${PG_USER}
+      PG_HOST: ${PG_HOST}
+      PG_DATABASE: ${PG_DATABASE}
+      PG_PASSWORD: ${PG_PASSWORD}
+      PG_PORT: ${PG_PORT}
     depends_on:
       postgresql:
         condition: service_healthy
-    # command: sh -c "npm run db:setup && npm start"
-    command: npm start
+    command: sh -c "npm run db:setup && npm start"
+    # command: npm start
     networks:
       - network_sb
 
 ############################################# PostgreSQL 데이터베이스  ####################################################
 
   # 데이터베이스 초기화 서비스
-  db-init:
-    image: node:22-alpine # Prisma와 psql을 실행하기 위해 Node.js 이미지를 사용
-    container_name: db_init_sb
-    volumes:
-      - ./backend/sbcom:/app/backend/sbcom
-      - ./backend/sbcef:/app/backend/sbcef
-      - ./backend/sbasl:/app/backend/sbasl
-    environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASSWORD}
-      POSTGRES_DB: ${PG_DATABASE}
-    depends_on:
-      postgresql:
-        condition: service_healthy
-    command: >
-      sh -c "
-      apk add --no-cache postgresql-client &&
-      psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBUser; CREATE SCHEMA IF NOT EXISTS SBOrder; CREATE SCHEMA IF NOT EXISTS Southbottle;' &&
-      cd /app/backend/sbcom && npm run db:setup &&
-      cd /app/backend/sbcef && npm run db:setup &&
-      cd /app/backend/sbasl && npm run db:setup &&
-      echo 'Database initialization complete.'
-      "
-    networks:
-      - network_sb
+  # db-init:
+    # image: node:22-alpine # Prisma와 psql을 실행하기 위해 Node.js 이미지를 사용
+    # container_name: db_init_sb
+    # volumes:
+    #   - ./backend/sbcom:/app/backend/sbcom
+    #   - ./backend/sbcef:/app/backend/sbcef
+    #   - ./backend/sbasl:/app/backend/sbasl
+    # environment:
+    #   POSTGRES_USER: ${PG_USER}
+    #   POSTGRES_PASSWORD: ${PG_PASSWORD}
+    #   POSTGRES_DB: ${PG_DATABASE}
+    # depends_on:
+    #   postgresql:
+    #     condition: service_healthy
+    # command: >
+    #   sh -c "
+    #   apk add --no-cache postgresql-client &&
+    #   psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBUser; CREATE SCHEMA IF NOT EXISTS SBOrder; CREATE SCHEMA IF NOT EXISTS Southbottle;' &&
+    #   cd /app/backend/sbcom && npm run db:setup &&
+    #   cd /app/backend/sbcef && npm run db:setup &&
+    #   cd /app/backend/sbasl && npm run db:setup &&
+    #   echo 'Database initialization complete.'
+    #   "
+    # networks:
+    #   - network_sb
 
   # PostgreSQL 데이터베이스 서비스
   postgresql:

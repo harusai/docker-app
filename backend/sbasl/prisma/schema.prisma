@@ -12,7 +12,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["SBOrder"]
+  schemas  = ["SBASL"]
 }
 
 model User {
@@ -22,8 +22,8 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   posts     Post[]
 
-  @@map("users")
-  @@schema("SBOrder")
+  //@@map("users")
+  @@schema("SBASL")
 }
 
 model Post {
@@ -34,8 +34,8 @@ model Post {
   createdAt DateTime @default(now()) @map("created_at")
   author    User     @relation(fields: [userId], references: [id])
 
-  @@map("posts")
-  @@schema("SBOrder")
+  // @@map("posts")
+  @@schema("SBASL")
 }
 
 model Product {
@@ -43,8 +43,8 @@ model Product {
   name  String   @db.VarChar(100)
   price Decimal  @db.Decimal(10, 2)
 
-  @@map("products")
-  @@schema("SBOrder") // This was added
+  // @@map("products")
+  @@schema("SBASL") // This was added
 }
 
 model Order {
@@ -53,6 +53,6 @@ model Order {
   items  Json  @db.JsonB
   total  Decimal @db.Decimal(10, 2)
 
-  @@map("orders")
-  @@schema("SBOrder") // This was added
+  // @@map("orders")
+  @@schema("SBASL") // This was added
 }
