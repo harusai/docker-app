@@ -67,9 +67,9 @@ services:
       postgresql:
         condition: service_healthy
       #- postgresql # PostgreSQL 서비스가 시작된 후에 Node.js가 실행되도록 합니다.
-    command: sh -c "npm run db:setup && npm start"
-     #command: sh -c "psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBUser; CREATE SCHEMA IF NOT EXISTS SBOrder; CREATE SCHEMA IF NOT EXISTS Southbottle;' && npm run db:setup && npm start"
-    # command: npm start
+      # db:setup 스크립트가 성공적으로 실행되지 않아도 컨테이너가 계속 실행되도록 설정합니다.
+    command: sh -c "npm run db:setup || true && npm start"
+    # command: sh -c "npm run db:setup; tail -f /dev/null"
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
@@ -91,7 +91,8 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-    command: sh -c "npm run db:setup && npm start"
+    command: sh -c "npm run db:setup || true && npm start"
+    # command: sh -c "npm run db:setup; tail -f /dev/null"
     # command: npm start
     networks:
       - network_sb
@@ -114,7 +115,8 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-    command: sh -c "npm run db:setup && npm start"
+    command: sh -c "npm run db:setup || true && npm start"
+    #command: sh -c "npm run db:setup; tail -f /dev/null"
     # command: npm start
     networks:
       - network_sb

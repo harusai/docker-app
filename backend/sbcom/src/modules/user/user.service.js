@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const bcrypt = require('bcrypt'); // 이 라인을 추가하세요.
 
 class UserService {
     constructor() {
@@ -14,6 +15,7 @@ class UserService {
      */
     async findAllUsers() {
         return this.prisma.sBCOM_USER.findMany();
+        
     }
 
     /**
