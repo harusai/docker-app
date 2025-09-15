@@ -64,12 +64,15 @@ services:
       PG_PASSWORD: ${PG_PASSWORD} 
       PG_PORT: ${PG_PORT} 
     depends_on:
+      db-init:
+        condition: service_completed_successfully
       postgresql:
         condition: service_healthy
       #- postgresql # PostgreSQL 서비스가 시작된 후에 Node.js가 실행되도록 합니다.
       # db:setup 스크립트가 성공적으로 실행되지 않아도 컨테이너가 계속 실행되도록 설정합니다.
-    command: sh -c "npm run db:setup || true && npm start"
+    # command: sh -c "npm run db:setup || true && npm start"
     # command: sh -c "npm run db:setup; tail -f /dev/null"
+    command: npm start
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
@@ -89,11 +92,13 @@ services:
       PG_PASSWORD: ${PG_PASSWORD}
       PG_PORT: ${PG_PORT}
     depends_on:
+      db-init:
+        condition: service_completed_successfully
       postgresql:
         condition: service_healthy
-    command: sh -c "npm run db:setup || true && npm start"
+    # command: sh -c "npm run db:setup || true && npm start"
     # command: sh -c "npm run db:setup; tail -f /dev/null"
-    # command: npm start
+    command: npm start
     networks:
       - network_sb
 
@@ -113,42 +118,50 @@ services:
       PG_PASSWORD: ${PG_PASSWORD}
       PG_PORT: ${PG_PORT}
     depends_on:
+      db-init:
+        condition: service_completed_successfully
       postgresql:
         condition: service_healthy
-    command: sh -c "npm run db:setup || true && npm start"
+    # command: sh -c "npm run db:setup || true && npm start"
     #command: sh -c "npm run db:setup; tail -f /dev/null"
-    # command: npm start
+    command: npm start
     networks:
       - network_sb
 
 ############################################# PostgreSQL 데이터베이스  ####################################################
 
   # 데이터베이스 초기화 서비스
-  # db-init:
-    # image: node:22-alpine # Prisma와 psql을 실행하기 위해 Node.js 이미지를 사용
-    # container_name: db_init_sb
-    # volumes:
-    #   - ./backend/sbcom:/app/backend/sbcom
-    #   - ./backend/sbcef:/app/backend/sbcef
-    #   - ./backend/sbasl:/app/backend/sbasl
-    # environment:
-    #   POSTGRES_USER: ${PG_USER}
-    #   POSTGRES_PASSWORD: ${PG_PASSWORD}
-    #   POSTGRES_DB: ${PG_DATABASE}
-    # depends_on:
-    #   postgresql:
-    #     condition: service_healthy
-    # command: >
-    #   sh -c "
-    #   apk add --no-cache postgresql-client &&
-    #   psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBUser; CREATE SCHEMA IF NOT EXISTS SBOrder; CREATE SCHEMA IF NOT EXISTS Southbottle;' &&
-    #   cd /app/backend/sbcom && npm run db:setup &&
-    #   cd /app/backend/sbcef && npm run db:setup &&
-    #   cd /app/backend/sbasl && npm run db:setup &&
-    #   echo 'Database initialization complete.'
-    #   "
-    # networks:
-    #   - network_sb
+  db-init:
+    image: node:22-alpine # Prisma와 psql을 실행하기 위해 Node.js 이미지를 사용
+    container_name: db_init_sb
+    volumes:
+      - ./backend/sbcom:/app/backend/sbcom
+      - ./backend/sbcef:/app/backend/sbcef
+      - ./backend/sbasl:/app/backend/sbasl
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}
+      DATABASE_URL: ${DATABASE_URL}
+      DB_CEF_URL: ${DB_CEF_URL}
+      DB_ASL_URL: ${DB_ASL_URL}
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    command: >
+      sh -c "
+      apk add --no-cache postgresql-client &&
+      until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER; do
+        echo 'Waiting for postgresql...'
+        sleep 1
+      done &&
+      cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup &&
+      cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup &&
+      cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup &&
+      echo 'Database initialization complete.'
+      "
+    networks:
+      - network_sb
 
   # PostgreSQL 데이터베이스 서비스
   postgresql:
