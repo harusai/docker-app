@@ -1,0 +1,7 @@
+# Ignore files and directories
+node_modules
+npm-debug.log
+.vscode
+.git
+.gitignore
+.env

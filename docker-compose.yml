@@ -72,7 +72,14 @@ services:
       # db:setup 스크립트가 성공적으로 실행되지 않아도 컨테이너가 계속 실행되도록 설정합니다.
     # command: sh -c "npm run db:setup || true && npm start"
     # command: sh -c "npm run db:setup; tail -f /dev/null"
-    command: npm start
+    command: >
+      sh -c "
+      until PGPASSWORD=$$PG_PASSWORD pg_isready -h $$PG_HOST -p $$PG_PORT -U $$PG_USER -d $$PG_DATABASE; do
+        echo 'Waiting for database to be ready...'
+        sleep 1
+      done &&
+      npm start"
+    # command: npm start
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
@@ -98,7 +105,14 @@ services:
         condition: service_healthy
     # command: sh -c "npm run db:setup || true && npm start"
     # command: sh -c "npm run db:setup; tail -f /dev/null"
-    command: npm start
+    command: >
+      sh -c "
+      until PGPASSWORD=$$PG_PASSWORD pg_isready -h $$PG_HOST -p $$PG_PORT -U $$PG_USER -d $$PG_DATABASE; do
+        echo 'Waiting for database to be ready...'
+        sleep 1
+      done &&
+      npm start"
+    # command: npm start
     networks:
       - network_sb
 
@@ -124,7 +138,14 @@ services:
         condition: service_healthy
     # command: sh -c "npm run db:setup || true && npm start"
     #command: sh -c "npm run db:setup; tail -f /dev/null"
-    command: npm start
+    command: >
+      sh -c "
+      until PGPASSWORD=$$PG_PASSWORD pg_isready -h $$PG_HOST -p $$PG_PORT -U $$PG_USER -d $$PG_DATABASE; do
+        echo 'Waiting for database to be ready...'
+        sleep 1
+      done &&
+      npm start"
+    #command: npm start
     networks:
       - network_sb
 
@@ -148,18 +169,10 @@ services:
     depends_on:
       postgresql:
         condition: service_healthy
-    command: >
-      sh -c "
-      apk add --no-cache postgresql-client &&
-      until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER; do
-        echo 'Waiting for postgresql...'
-        sleep 1
-      done &&
-      cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup &&
-      cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup &&
-      cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup &&
-      echo 'Database initialization complete.'
-      "
+    # command: sh -c "apk add --no-cache postgresql-client && until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER -d postgres; do echo 'Waiting for postgresql to be ready...'; sleep 1; done && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d postgres -c 'CREATE DATABASE \"Southbottle\";' && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBCEF; CREATE SCHEMA IF NOT EXISTS SBASL; CREATE SCHEMA IF NOT EXISTS Southbottle;' && cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup && cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup && cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup && echo 'Database initialization complete.'"
+    # command: sh -c "apk add --no-cache postgresql-client && until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER -d postgres; do echo 'Waiting for postgresql to be ready...'; sleep 1; done && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d postgres -c 'CREATE DATABASE \"Southbottle\";' && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBCEF; CREATE SCHEMA IF NOT EXISTS SBASL; CREATE SCHEMA IF NOT EXISTS Southbottle;' && cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup && cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup && cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup && echo 'Database initialization complete.'"
+    command: sh -c "apk add --no-cache postgresql-client && until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER -d $$POSTGRES_DB; do echo 'Waiting for postgresql to be ready...'; sleep 1; done && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS \"SBCOM\"; CREATE SCHEMA IF NOT EXISTS \"SBCEF\"; CREATE SCHEMA IF NOT EXISTS \"SBASL\"; CREATE SCHEMA IF NOT EXISTS \"Southbottle\";' && cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup && cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup && cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup && echo 'Database initialization complete.'"
+   
     networks:
       - network_sb
 

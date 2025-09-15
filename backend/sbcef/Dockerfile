@@ -3,18 +3,20 @@ FROM node:22-alpine
 
 # OpenSSL 설치(Prisma 사용을 위해 필요)
 RUN apk add --no-cache openssl
+# PostgreSQL 클라이언트 설치
+RUN apk add --no-cache postgresql-client
 
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# 애플리케이션 종속성 설치
-COPY package*.json ./
+# 애플리케이션 종속성 설치에 필요한 파일만 먼저 복사
+COPY package.json .
+COPY package-lock.json .
 RUN npm install
 
-# Prisma 디렉토리와 소스 코드 전체를 작업 디렉토리로 복사
-# 이 단계에서 prisma/schema.prisma 파일이 컨테이너 내부에 존재하게 됩니다.
-COPY . .
-
+# Prisma 스키마 및 소스 코드 복사
+COPY prisma ./prisma
+COPY src ./src
 
 # 빌드 인자로 DATABASE_URL을 받습니다.
 ARG DATABASE_URL
@@ -24,15 +26,8 @@ ENV DATABASE_URL=$DATABASE_URL
 
 RUN npx prisma generate
 
-# Prisma Client 생성 및 스키마 적용
-# db push 명령어를 사용하여 스키마를 데이터베이스에 동기화합니다.
-# seed 명령어를 통해 초기 데이터를 삽입합니다.
-# RUN npx prisma generate && npx prisma db push --skip-generate && npx prisma db seed
-
-
 # PORT
 EXPOSE 3100
 
 # 애플리케이션 실행
 CMD ["npm", "start"]
-#CMD ["node", "src/app.js"]

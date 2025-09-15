@@ -21,6 +21,9 @@
  - docker-compose logs
  - docker-compose logs -f
 
+### build 실패로 logs 를 볼 수 없을때, 일부 run 상태로 만들고 down -v 
+ - docker-compose run --rm db-init
+
 
 
 
