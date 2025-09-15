@@ -3,7 +3,7 @@ import React, { Suspense } from 'react';
 import './App.css'
 //import Button from 'remoteApp/Button';
 // UserList 컴포넌트 import 추가
-// import UserList from './src/Users/UserList';
+import UserList from './src/Users/UserList';
 
 
 
@@ -16,6 +16,7 @@ const Remote1Component = React.lazy(() => import('sbcef/Remote1Component'));
 function App() {
   return (
     <div className="App">
+      <UserList />
       <h1>Host Application</h1>
       <Suspense fallback={<div>Loading Remote Components...</div>}>
         <Remote1Component />
