@@ -13,17 +13,27 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro # Nginx 설정 파일을 읽기 전용으로 마운트합니다.
     depends_on:
-      - mbe-sbcom # backend nodejs 공통 서비스가 시작된 후에 Nginx가 실행되도록 합니다.
-      - mbe-sbcef # backend nodejs sbcefserv
-      - mbe-sbasl # backend nodejs sbaslserv
-      - mfe-sbcom # sbcom host front framework 뼈대가 될 서비스
-      - mfe-sbcef  # sbcom 뼈대 서비스에 로드될 sbcef 서비스 
+      # - mbe-sbcom # backend nodejs 공통 서비스가 시작된 후에 Nginx가 실행되도록 합니다.
+      # - mbe-sbcef # backend nodejs sbcefserv
+      # - mbe-sbasl # backend nodejs sbaslserv
+      # - mfe-sbcom # sbcom host front framework 뼈대가 될 서비스
+      # - mfe-sbcef  # sbcom 뼈대 서비스에 로드될 sbcef 서비스 
       # - sbasl  # sbcom 뼈대 서비스에 로드될 sbasl 서비스 
+      mbe-sbcom:
+        condition: service_healthy # mbe-sbcom 서비스가 준비될 때까지 기다립니다.
+      mbe-sbcef:
+        condition: service_healthy # mbe-sbcef 서비스가 준비될 때까지 기다립니다.
+      mbe-sbasl:
+        condition: service_healthy # mbe-sbasl 서비스가 준비될 때까지 기다립니다.
+      mfe-sbcom:
+        condition: service_started
+      mfe-sbcef:
+        condition: service_started
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
 
 ############################################# micro front service ####################################################
-  # 기존 서비스 아래에 다음 서비스를 추가합니다.
+  # React 애플리케이션 서비스
   mfe-sbcom:
     build:
       context: ./frontend
@@ -82,6 +92,11 @@ services:
     # command: npm start
     networks:
       - network_sb # 사용자 정의 네트워크에 연결합니다.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3000/index"] # /index 엔드포인트로 서버 상태 확인
+      interval: 10s # 10초마다 체크
+      timeout: 5s # 타임아웃 5초
+      retries: 5 # 5번 실패하면 비정상으로 간주
 
 # SB_CEF
   mbe-sbcef:
@@ -115,6 +130,11 @@ services:
     # command: npm start
     networks:
       - network_sb
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3100/index"] # /index 엔드포인트로 서버 상태 확인
+      interval: 10s # 10초마다 체크
+      timeout: 5s # 타임아웃 5초
+      retries: 5 # 5번 실패하면 비정상으로 간주
 
   # SB_ASL
   mbe-sbasl:
@@ -148,6 +168,11 @@ services:
     #command: npm start
     networks:
       - network_sb
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:3200/index"] # /index 엔드포인트로 서버 상태 확인
+      interval: 10s # 10초마다 체크
+      timeout: 5s # 타임아웃 5초
+      retries: 5 # 5번 실패하면 비정상으로 간주
 
 ############################################# PostgreSQL 데이터베이스  ####################################################
 
@@ -171,8 +196,24 @@ services:
         condition: service_healthy
     # command: sh -c "apk add --no-cache postgresql-client && until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER -d postgres; do echo 'Waiting for postgresql to be ready...'; sleep 1; done && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d postgres -c 'CREATE DATABASE \"Southbottle\";' && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBCEF; CREATE SCHEMA IF NOT EXISTS SBASL; CREATE SCHEMA IF NOT EXISTS Southbottle;' && cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup && cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup && cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup && echo 'Database initialization complete.'"
     # command: sh -c "apk add --no-cache postgresql-client && until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER -d postgres; do echo 'Waiting for postgresql to be ready...'; sleep 1; done && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d postgres -c 'CREATE DATABASE \"Southbottle\";' && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS SBCOM; CREATE SCHEMA IF NOT EXISTS SBCEF; CREATE SCHEMA IF NOT EXISTS SBASL; CREATE SCHEMA IF NOT EXISTS Southbottle;' && cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup && cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup && cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup && echo 'Database initialization complete.'"
-    command: sh -c "apk add --no-cache postgresql-client && until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER -d $$POSTGRES_DB; do echo 'Waiting for postgresql to be ready...'; sleep 1; done && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS \"SBCOM\"; CREATE SCHEMA IF NOT EXISTS \"SBCEF\"; CREATE SCHEMA IF NOT EXISTS \"SBASL\"; CREATE SCHEMA IF NOT EXISTS \"Southbottle\";' && cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup && cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup && cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup && echo 'Database initialization complete.'"
-   
+    # command: sh -c "apk add --no-cache postgresql-client && until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER -d $$POSTGRES_DB; do echo 'Waiting for postgresql to be ready...'; sleep 1; done && PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS \"SBCOM\"; CREATE SCHEMA IF NOT EXISTS \"SBCEF\"; CREATE SCHEMA IF NOT EXISTS \"SBASL\"; CREATE SCHEMA IF NOT EXISTS \"Southbottle\";' && cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup && cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup && cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup && echo 'Database initialization complete.'"
+    command : >
+      sh -c "
+        apk add --no-cache postgresql-client &&
+        until PGPASSWORD=$$POSTGRES_PASSWORD pg_isready -h postgresql -p 5432 -U $$POSTGRES_USER -d $$POSTGRES_DB; do
+          echo 'Waiting for postgresql to be ready...'
+          sleep 1
+        done &&
+        if ! PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -p 5432 -U $$POSTGRES_USER -d $$POSTGRES_DB -c '\\dt \"SBCOM\".\"SBCOM_COMPANY\"' | grep -q 'SBCOM_COMPANY'; then
+          echo 'Database tables not found. Initializing...' &&
+          PGPASSWORD=$$POSTGRES_PASSWORD psql -h postgresql -p 5432 -U $$POSTGRES_USER -d $$POSTGRES_DB -c 'CREATE SCHEMA IF NOT EXISTS \"SBCOM\"; CREATE SCHEMA IF NOT EXISTS \"SBCEF\"; CREATE SCHEMA IF NOT EXISTS \"SBASL\"; CREATE SCHEMA IF NOT EXISTS \"Southbottle\";' &&
+          cd /app/backend/sbcom && npm install && DATABASE_URL=$$DATABASE_URL npm run db:setup &&
+          cd /app/backend/sbcef && npm install && DATABASE_URL=$$DB_CEF_URL npm run db:setup &&
+          cd /app/backend/sbasl && npm install && DATABASE_URL=$$DB_ASL_URL npm run db:setup &&
+          echo 'Database initialization complete.'
+        else
+          echo 'Database already initialized. Skipping setup.'
+        fi"
     networks:
       - network_sb
 

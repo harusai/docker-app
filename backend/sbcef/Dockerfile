@@ -1,10 +1,8 @@
 # Node.js 공식 이미지 사용
 FROM node:22-alpine
 
-# OpenSSL 설치(Prisma 사용을 위해 필요)
-RUN apk add --no-cache openssl
-# PostgreSQL 클라이언트 설치
-RUN apk add --no-cache postgresql-client
+# OpenSSL, PostgreSQL 클라이언트, 그리고 wget 설치
+RUN apk add --no-cache openssl postgresql-client wget
 
 # 작업 디렉토리 설정
 WORKDIR /app
