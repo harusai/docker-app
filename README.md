@@ -15,6 +15,13 @@
 
 
 
+docker-compose up --build -d 
+
+개발환경 
+docker network create network_sb
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build -d
+
+
 프로젝트 구조
 마이크로서비스 아키텍처와 마이크로 프론트엔드 아키텍처가 결합된 현대적인 애플리케이션 구조. 
 
